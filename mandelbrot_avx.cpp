@@ -37,7 +37,7 @@ void draw_mandelbrot_avx (WindowSet *window_set, int *code_error)
                         check_point_mandelbrot_avx (mandel_coord_x, mandel_coord_y, &belong_mandelbrot, code_error);
                         ERR_RET ();
 
-                        draw_vector_color (window_set, (int *) &belong_mandelbrot, ix, iy, code_error);
+                        draw_vector_color (window_set, (long long int *) &belong_mandelbrot, ix, iy, code_error);
                 }
         }
 }
@@ -49,6 +49,8 @@ inline void check_point_mandelbrot_avx (const __m256d start_coord_x, const __m25
         __m256d x = start_coord_x;
         __m256d y = start_coord_y;
 
+        int mask = 0;
+
         for (int i = 1; i < N_MAX; i++)
         {
                 __m256d x_square = _mm256_mul_pd (x, x);
@@ -59,7 +61,7 @@ inline void check_point_mandelbrot_avx (const __m256d start_coord_x, const __m25
 
                 __m256d cmp = _mm256_cmp_pd (R_x_y, VECTOR_MAX_RADIUS, _CMP_LE_OQ);
 
-                int mask = _mm256_movemask_pd (cmp);
+                mask = _mm256_movemask_pd (cmp);
 
                 if (!mask)
                 {
@@ -73,13 +75,13 @@ inline void check_point_mandelbrot_avx (const __m256d start_coord_x, const __m25
         }
 }
 
-inline void draw_vector_color (WindowSet *window_set, const int *belong_mandelbrot, const int ix, const int iy, int *code_error)
+inline void draw_vector_color (WindowSet *window_set, const long long int *belong_mandelbrot, const int ix, const int iy, int *code_error)
 {
         my_assert (window_set != NULL, ERR_PTR);
 
         for (int i = 0; i < 4; i++)
         {
-                sf::Color color ((belong_mandelbrot[i] * 6) % 256, 0, (belong_mandelbrot[i] * 10) % 256);
+                sf::Color color ((belong_mandelbrot[i] * 6) % N_MAX, 0, (belong_mandelbrot[i] * 10) % N_MAX);
                 IMAGE.setPixel (ix + i, iy, color);
         }
 }
