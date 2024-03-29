@@ -4,12 +4,12 @@
 int main ()
 {
         int code_error = 0;
-        const char *font_file_name = "./includes/arialmt.ttf";
+        const char *font_file_name = FONT_FILE_NAME;
 
-        WindowSet window_set = {};
-        create_window (&window_set, font_file_name, &code_error);
+        Window window = {};
+        create_window(&window, font_file_name, &code_error);
 
-        draw_window (&window_set, &code_error);
+        draw_window(&window, &code_error);
         PRINT_ERROR
 
         return 0;

@@ -1,122 +1,80 @@
 #include "mandelbrot.hpp"
 #include "mandelbrot_avx.hpp"
 
-void create_window (WindowSet *window_set, const char *font_file_name, int *code_error)
-{
-        my_assert (window_set != NULL, ERR_PTR);
+static const int COLORS[9][2] = {{6, 10}, {20, 60}, {125, 235}, {97, 126}, {12, 60}, {234, 12}, {120, 90}, {20, 10}, {60, 30}};
 
-        WINDOW.create (sf::VideoMode (WIDTH, HEIGHT), HEADING);
-        IMAGE.create (WIDTH, HEIGHT);
-        TEXTURE.create (WIDTH, HEIGHT);
-        SPRITE.setTexture (TEXTURE);
+void create_window (Window *window, const char *font_file_name, int *code_error)
+{
+        my_assert(window != NULL, ERR_PTR);
+
+        window->window_config.window.create(sf::VideoMode (WIDTH, HEIGHT), HEADING);
+        window->window_config.image.create(WIDTH, HEIGHT);
+        window->window_config.texture.create(WIDTH, HEIGHT);
+        window->window_config.sprite.setTexture(window->window_config.texture);
+
+        window->window_config.color[0] = COLORS[0][0];
+        window->window_config.color[1] = COLORS[0][1];
 
         #ifdef FPS_ON
-                if (!FONT_FPS.loadFromFile (font_file_name))
+                if (!window->window_config.font_fps.loadFromFile(font_file_name))
                 {
                         *code_error |= ERR_FOPEN;
                 }
+
+                window->window_config.text_fps.setFont(window->window_config.font_fps);
+                window->window_config.text_fps.setCharacterSize(FONT_SIZE);
+
+                window->window_config.text_fps.setFillColor(BLUE_COLOR);
+
         #endif
 
-        FLAG_OFFSET_WINDOW = true;
-        X_OFFSET = 0;
-        Y_OFFSET = 0;
-        SCOPE = 1;
+        window->window_position.x_offset = 0;
+        window->window_position.y_offset = 0;
+        window->window_position.zoom     = 1;
 }
 
-void draw_window (WindowSet *window_set, int *code_error)
+void draw_window (Window *window, int *code_error)
 {
-        my_assert (window_set != NULL, ERR_PTR);
+        my_assert(window != NULL, ERR_PTR);
 
-        while (window_set->window.isOpen ())
+        while (window->window_config.window.isOpen())
         {
-                COUNT_FPS (
+                PROCESS_FPS (
                 {
-                        event_process (window_set, code_error);
+                        event_process(window, code_error);
 
-                        if (FLAG_OFFSET_WINDOW)
-                        {
-                                if (USE_AVX)
-                                {
-                                        draw_mandelbrot_avx (window_set, code_error);
-                                }
-                                else
-                                {
-                                        draw_mandelbrot (window_set, code_error);
-                                }
+                        frame_process(window, code_error);
 
-                                ERR_RET ();
-
-                                TEXTURE.update (IMAGE);
-
-                                WINDOW.clear ();
-                                WINDOW.draw (SPRITE);
-                        }
+                        window_update(&window->window_config, code_error);
                 });
 
-                if (FLAG_OFFSET_WINDOW)
-                {
-                        WINDOW.display ();
-                }
-
-                FLAG_OFFSET_WINDOW = false;
+                ERR_RET ();
         }
 }
 
-void event_process (WindowSet *window_set, int *code_error)
+inline void event_process (Window *window, int *code_error)
 {
-        my_assert (window_set != NULL, ERR_PTR);
+        my_assert(window != NULL, ERR_PTR);
 
         sf::Event event;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
 
-        while (WINDOW.pollEvent (event))
+        while (window->window_config.window.pollEvent(event))
         {
                 switch (event.type)
                 {
                         case (EventKeyPressed):
                         {
-                                FLAG_OFFSET_WINDOW = true;
-
-                                if (KeyPressed (KeyEscape))
-                                {
-                                        WINDOW.close ();
-                                }
-                                else if (KeyPressed (KeyLeft))
-                                {
-                                        X_OFFSET -= COEF_WINDOW_MOVE_R_L;
-                                }
-                                else if (KeyPressed (KeyRight))
-                                {
-                                        X_OFFSET += COEF_WINDOW_MOVE_R_L;
-                                }
-                                else if (KeyPressed (KeyUp))
-                                {
-                                        Y_OFFSET -= COEF_WINDOW_MOVE_R_L;
-                                }
-                                else if (KeyPressed (KeyDown))
-                                {
-                                        Y_OFFSET += COEF_WINDOW_MOVE_R_L;
-                                }
-                                else if (KeyPressed (KeyEqual))
-                                {
-                                        SCOPE /= COEF_WINDOW_MOVE_U_D;
-                                }
-                                else if (KeyPressed (KeyHyphen))
-                                {
-                                        SCOPE *= COEF_WINDOW_MOVE_U_D;
-                                }
-                                else if (KeyPressed (KeyEnter))
-                                {
-                                        USE_AVX = !USE_AVX;
-                                }
+                                key_process(window, code_error);
 
                                 break;
                         }
                         case (EventWindowClosed):
                         {
-                                WINDOW.close ();
+                                window->window_config.window.close();
+
                                 break;
                         }
                         default:
@@ -124,68 +82,77 @@ void event_process (WindowSet *window_set, int *code_error)
                                 break;
                         }
                 }
-
         }
 
 #pragma GCC diagnostic pop
 
 }
 
-void draw_mandelbrot (WindowSet *window_set, int *code_error)
+inline void frame_process (Window *window, int *code_error)
 {
-        my_assert (window_set != NULL, ERR_PTR);
+        my_assert(window != NULL, ERR_PTR);
+
+        if (window->window_config.use_avx)
+        {
+                process_mandelbrot_avx(window, code_error);
+        }
+        else
+        {
+                process_mandelbrot(window, code_error);
+        }
+}
+
+inline void window_update (WindowConfig *window_config, int *code_error)
+{
+        my_assert(window_config != NULL, ERR_PTR);
+
+        window_config->texture.update(window_config->image);
+
+        window_config->window.clear();
+        window_config->window.draw(window_config->sprite);
+
+        #ifdef FPS_ON
+                window_config->window.draw(window_config->text_fps);
+        #endif
+
+        window_config->window.display();
+}
+
+#define DEF_KEY(name, code)                                     \
+        if (KeyPressed(name))                                   \
+        {                                                       \
+                code                                            \
+        }                                                       \
+        else
+
+inline void key_process (Window *window, int *code_error)
+{
+        my_assert(window != NULL, ERR_PTR);
+
+        #include "./includes/keys.h"
+        {}
+}
+
+#undef DEF_KEY
+
+inline void process_mandelbrot (Window *window, int *code_error)
+{
+        my_assert(window != NULL, ERR_PTR);
 
         for (int iy = 0; iy < HEIGHT; iy++)
         {
                 for (int ix = 0; ix < WIDTH; ix++)
                 {
-                        double mandel_coord_x = (((double) ix + X_OFFSET) / WIDTH  * COEF_STRETCH_X - COEF_CARRY_X) * SCOPE;
-                        double mandel_coord_y = (((double) iy + Y_OFFSET) / HEIGHT * COEF_STRETCH_Y - COEF_CARRY_Y) * SCOPE;
+                        double mandel_coord_x = (((double) ix + window->window_position.x_offset) / WIDTH  * COEF_SCALE_X - COEF_OFFSET_X) * window->window_position.zoom;
+                        double mandel_coord_y = (((double) iy + window->window_position.y_offset) / HEIGHT * COEF_SCALE_Y - COEF_OFFSET_Y) * window->window_position.zoom;
 
-                        volatile int belong_mandelbrot = check_point_mandelbrot (mandel_coord_x, mandel_coord_y);
-                        ERR_RET ();
+                        volatile int belong_mandelbrot = check_point_mandelbrot(mandel_coord_x, mandel_coord_y);
+                        ERR_RET();
 
-                        sf::Color color ((belong_mandelbrot * 6) % N_MAX, 0, (belong_mandelbrot * 10) % N_MAX);
-                        IMAGE.setPixel (ix, iy, color);
+                        set_color_pixel(&window->window_config, belong_mandelbrot, ix, iy, code_error);
                 }
         }
 }
-
-#ifdef FPS_ON
-void count_fps (WindowSet *window_set, int *code_error)
-{
-        my_assert (window_set != NULL, ERR_PTR);
-
-        float time_sec = TIME.asSeconds ();
-
-        FPS = 1 / time_sec;
-}
-
-void print_fps (WindowSet *window_set, int *code_error)
-{
-        my_assert (window_set != NULL, ERR_PTR);
-
-        TEXT_FPS.setFont (FONT_FPS);
-        TEXT_FPS.setCharacterSize (CHARACTER_SIZE);
-
-        TEXT_FPS.setFillColor (BLUE_COLOR);
-
-        TEXT_FPS.setString (convert_float_to_str (FPS));
-
-        WINDOW.draw(TEXT_FPS);
-}
-
-char *convert_float_to_str (float number)
-{
-        int number_len = snprintf (NULL, 0, "%.2f", number);
-
-        char *result = (char *) calloc (number_len + 1, sizeof (char));
-        snprintf (result, number_len + 1, "%.2f", number);
-
-        return result;
-}
-
-#endif
 
 inline int check_point_mandelbrot (const double start_coord_x, const double start_coord_y)
 {
@@ -209,3 +176,41 @@ inline int check_point_mandelbrot (const double start_coord_x, const double star
 
     return 0;
 }
+
+void set_color_pixel (WindowConfig *window_config, const long long int belong_mandelbrot, const int ix, const int iy, int *code_error)
+{
+        my_assert(window_config != NULL, ERR_PTR);
+
+        sf::Color color((belong_mandelbrot * window_config->color[0]) % N_MAX, 0, (belong_mandelbrot * window_config->color[1]) % N_MAX);
+        window_config->image.setPixel(ix, iy, color);
+}
+
+#ifdef FPS_ON
+
+void process_fps (WindowPerformance *window_performance, int *code_error)
+{
+        my_assert(window_performance != NULL, ERR_PTR);
+
+        float time_sec = window_performance->clock_info.time.asSeconds();
+
+        window_performance->fps = 1 / time_sec;
+}
+
+void print_fps (Window *window, int *code_error)
+{
+        my_assert(window != NULL, ERR_PTR);
+
+        window->window_config.text_fps.setString(convert_float_to_str(window->window_performance.fps));
+}
+
+char *convert_float_to_str (float number)
+{
+        int number_len = snprintf(NULL, 0, "%.2f", number);
+
+        char *result = (char *) calloc(number_len + 1, sizeof (char));
+        snprintf(result, number_len + 1, "%.2f", number);
+
+        return result;
+}
+
+#endif
