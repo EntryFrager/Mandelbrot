@@ -1,5 +1,4 @@
-#include "mandelbrot.hpp"
-#include "mandelbrot_avx.hpp"
+#include "..//includes/mandelbrot.hpp"
 
 int main ()
 {

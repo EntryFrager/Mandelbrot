@@ -1,6 +1,6 @@
 /// @file error.cpp
 
-#include "error.h"
+#include "..//includes/error.h"
 
 /**
  * Types of errors.
@@ -9,7 +9,7 @@
 #define DEF_ERR(name) name,
 
 static const char *err_msgs_arr[] = {
-    #include "error_name.h"
+    #include "..//includes/error_name.h"
 };
 
 #undef DEF_ERR

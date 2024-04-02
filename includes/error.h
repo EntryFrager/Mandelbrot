@@ -18,7 +18,7 @@
     #define ERR_RET(ret_value) if (*code_error != 0) {return ret_value;}
 #else
     #define PRINT_ERROR
-    #define $$(...)
+    #define ERR_RET(...)
 #endif
 
 #define my_assert(expr, cd_err) if (!(expr)) {  \

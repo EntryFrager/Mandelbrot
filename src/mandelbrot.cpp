@@ -1,7 +1,20 @@
-#include "mandelbrot.hpp"
-#include "mandelbrot_avx.hpp"
+#include "..//includes/mandelbrot.hpp"
+#include "..//includes/mandelbrot_array.hpp"
+#include "..//includes/mandelbrot_avx.hpp"
 
 static const int COLORS[9][2] = {{6, 10}, {20, 60}, {125, 235}, {97, 126}, {12, 60}, {234, 12}, {120, 90}, {20, 10}, {60, 30}};
+
+static inline void event_process (Window *window, int *code_error);
+static inline void frame_process (Window *window, int *code_error);
+static inline void window_update (WindowConfig *window_config, int *code_error);
+static inline void key_process (Window *window, int *code_error);
+static inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_error);
+static inline void process_mandelbrot (Window *window, int *code_error);
+static inline int check_point_mandelbrot (const double start_coord_x, const double start_coord_y);
+
+#ifdef FPS_ON
+    static void set_string_fps (Window *window, int *code_error);
+#endif
 
 void create_window (Window *window, const char *font_file_name, int *code_error)
 {
@@ -12,8 +25,10 @@ void create_window (Window *window, const char *font_file_name, int *code_error)
         window->window_config.texture.create(WIDTH, HEIGHT);
         window->window_config.sprite.setTexture(window->window_config.texture);
 
-        window->window_config.color[0] = COLORS[0][0];
-        window->window_config.color[1] = COLORS[0][1];
+        window->window_config.n_color = 0;
+
+        window->window_config.use_avx   = false;
+        window->window_config.use_array = false;
 
         #ifdef FPS_ON
                 if (!window->window_config.font_fps.loadFromFile(font_file_name))
@@ -25,6 +40,11 @@ void create_window (Window *window, const char *font_file_name, int *code_error)
                 window->window_config.text_fps.setCharacterSize(FONT_SIZE);
 
                 window->window_config.text_fps.setFillColor(BLUE_COLOR);
+
+                window->window_performance.frame_ticks  = 0;
+                window->window_performance.frame_time   = 0;
+                window->window_performance.render_ticks = 0;
+                window->window_performance.render_time  = 0;
 
         #endif
 
@@ -39,16 +59,17 @@ void draw_window (Window *window, int *code_error)
 
         while (window->window_config.window.isOpen())
         {
-                PROCESS_FPS (
+                PROCESS_FRAME_PERFORMANCE(
                 {
                         event_process(window, code_error);
+                        ERR_RET();
 
-                        frame_process(window, code_error);
+                        PROCESS_RENDER_PERFORMANCE(frame_process(window, code_error));
+                        ERR_RET();
 
                         window_update(&window->window_config, code_error);
-                });
-
-                ERR_RET ();
+                        ERR_RET();
+                })
         }
 }
 
@@ -77,11 +98,19 @@ inline void event_process (Window *window, int *code_error)
 
                                 break;
                         }
+                        case (EventWheelScrolled):
+                        {
+                                mouse_wheel_process(window, &event, code_error);
+
+                                break;
+                        }
                         default:
                         {
                                 break;
                         }
                 }
+
+                ERR_RET();
         }
 
 #pragma GCC diagnostic pop
@@ -96,10 +125,16 @@ inline void frame_process (Window *window, int *code_error)
         {
                 process_mandelbrot_avx(window, code_error);
         }
+        else if (window->window_config.use_array)
+        {
+                process_mandelbrot_array(window, code_error);
+        }
         else
         {
                 process_mandelbrot(window, code_error);
         }
+
+        ERR_RET();
 }
 
 inline void window_update (WindowConfig *window_config, int *code_error)
@@ -129,11 +164,40 @@ inline void key_process (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
-        #include "./includes/keys.h"
+        #include "..//includes/keys.h"
         {}
 }
 
 #undef DEF_KEY
+
+inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_error)
+{
+        my_assert(window != NULL, ERR_PTR);
+        my_assert(event  != NULL, ERR_PTR);
+
+        if (event->mouseWheelScroll.delta > 0)
+        {
+                if (window->window_config.n_color == 8)
+                {
+                        window->window_config.n_color = 0;
+                }
+                else
+                {
+                        window->window_config.n_color++;
+                }
+        }
+        else
+        {
+                if (window->window_config.n_color == 0)
+                {
+                        window->window_config.n_color = 8;
+                }
+                else
+                {
+                        window->window_config.n_color--;
+                }
+        }
+}
 
 inline void process_mandelbrot (Window *window, int *code_error)
 {
@@ -150,6 +214,7 @@ inline void process_mandelbrot (Window *window, int *code_error)
                         ERR_RET();
 
                         set_color_pixel(&window->window_config, belong_mandelbrot, ix, iy, code_error);
+                        ERR_RET();
                 }
         }
 }
@@ -181,36 +246,24 @@ void set_color_pixel (WindowConfig *window_config, const long long int belong_ma
 {
         my_assert(window_config != NULL, ERR_PTR);
 
-        sf::Color color((belong_mandelbrot * window_config->color[0]) % N_MAX, 0, (belong_mandelbrot * window_config->color[1]) % N_MAX);
+        sf::Color color((belong_mandelbrot * COLORS[window_config->n_color][0]) % N_MAX, 0, (belong_mandelbrot * COLORS[window_config->n_color][1]) % N_MAX);
         window_config->image.setPixel(ix, iy, color);
 }
 
 #ifdef FPS_ON
 
-void process_fps (WindowPerformance *window_performance, int *code_error)
-{
-        my_assert(window_performance != NULL, ERR_PTR);
-
-        float time_sec = window_performance->clock_info.time.asSeconds();
-
-        window_performance->fps = 1 / time_sec;
-}
-
-void print_fps (Window *window, int *code_error)
+void set_string_fps (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
-        window->window_config.text_fps.setString(convert_float_to_str(window->window_performance.fps));
-}
+        char *str_fps = (char *) calloc(LEN_STR_FPS, sizeof(char));
 
-char *convert_float_to_str (float number)
-{
-        int number_len = snprintf(NULL, 0, "%.2f", number);
+        sprintf(str_fps, "%s / %s : %.2f / %ld\n\r%s / %s : %.2f / %ld\n\r",
+                FRAME_TIME_STR, FRAME_TICKS_STR, window->window_performance.frame_time,
+                window->window_performance.frame_ticks, RENDER_TIME_STR,
+                RENDER_TICKS_STR, window->window_performance.render_time, window->window_performance.render_ticks);
 
-        char *result = (char *) calloc(number_len + 1, sizeof (char));
-        snprintf(result, number_len + 1, "%.2f", number);
-
-        return result;
+        window->window_config.text_fps.setString(str_fps);
 }
 
 #endif

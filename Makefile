@@ -7,20 +7,22 @@ CFLAGS = -c -O3 -mavx -mavx2 -Wshadow -Winit-self -Wredundant-decls -Wcast-align
 	-Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing   \
 	-Wstrict-null-sentinel -Wtype-limits -Wwrite-strings -Werror=vla -D_DEBUG -D_EJUDGE_CLIENT_SIDE
 
-INCLUDES = mandelbrot.hpp mandelbrot_avx.hpp keys.h error.h error_name.h dsl.hpp
+LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
-SOURCES = main.cpp mandelbrot.cpp mandelbrot_avx.cpp error.cpp
+INCLUDES = includes/mandelbrot.hpp includes/mandelbrot_avx.hpp includes/mandelbrot_array.hpp includes/keys.h includes/error.h includes/error_name.h includes/dsl.hpp
+
+SOURCES = main.cpp mandelbrot.cpp mandelbrot_avx.cpp mandelbrot_array.cpp error.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
 EXECUTABLE = mandelbrot
 
-VPATH = ./includes/
+VPATH = ./src/
 
 all: $(SOURCES) $(INCLUDES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@ -lsfml-graphics -lsfml-window -lsfml-system
+	$(CC) $(OBJECTS) -o $@ $(LIBS)
 
 .cpp.o: $(INCLUDES) $(SOURCES)
 	$(CC) $(CFLAGS) $< -o $@

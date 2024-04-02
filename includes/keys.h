@@ -33,61 +33,68 @@ DEF_KEY(KeyHyphen,
             window->window_position.zoom *= COEF_WINDOW_ZOOM;
         })
 
-DEF_KEY(KeyEnter,
+DEF_KEY(KeyQ,
         {
-            window->window_config.use_avx = !window->window_config.use_avx;
+            window->window_config.use_avx = false;
+
+            window->window_config.use_array = false;
+        })
+
+DEF_KEY(KeyW,
+        {
+            window->window_config.use_avx = false;
+
+            window->window_config.use_array = true;
+        })
+
+DEF_KEY(KeyE,
+        {
+            window->window_config.use_avx = true;
+
+            window->window_config.use_array = false;
         })
 
 DEF_KEY(KeyNum1,
         {
-            window->window_config.color[0] = COLORS[0][0];
-            window->window_config.color[1] = COLORS[0][1];
+            window->window_config.n_color = 0;
         })
 
 DEF_KEY(KeyNum2,
         {
-            window->window_config.color[0] = COLORS[1][0];
-            window->window_config.color[1] = COLORS[1][1];
+            window->window_config.n_color = 1;
         })
 
 DEF_KEY(KeyNum3,
         {
-            window->window_config.color[0] = COLORS[2][0];
-            window->window_config.color[1] = COLORS[2][1];
+            window->window_config.n_color = 2;
         })
 
 DEF_KEY(KeyNum4,
         {
-            window->window_config.color[0] = COLORS[3][0];
-            window->window_config.color[1] = COLORS[3][1];
+            window->window_config.n_color = 3;
         })
 
 DEF_KEY(KeyNum5,
         {
-            window->window_config.color[0] = COLORS[4][0];
-            window->window_config.color[1] = COLORS[4][1];
+            window->window_config.n_color = 4;
         })
 
 DEF_KEY(KeyNum6,
         {
-            window->window_config.color[0] = COLORS[5][0];
-            window->window_config.color[1] = COLORS[5][1];
+            window->window_config.n_color = 5;
         })
 
 DEF_KEY(KeyNum7,
         {
-            window->window_config.color[0] = COLORS[6][0];
-            window->window_config.color[1] = COLORS[6][1];
+            window->window_config.n_color = 6;
         })
 
 DEF_KEY(KeyNum8,
         {
-            window->window_config.color[0] = COLORS[7][0];
-            window->window_config.color[1] = COLORS[7][1];
+            window->window_config.n_color = 7;
         })
 
 DEF_KEY(KeyNum9,
         {
-            window->window_config.color[0] = COLORS[8][0];
-            window->window_config.color[1] = COLORS[8][1];
+            window->window_config.n_color = 8;
         })

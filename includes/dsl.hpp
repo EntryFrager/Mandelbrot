@@ -1,19 +1,26 @@
 #ifndef DSL_H
 #define DSL_H
 
-#define BLUE_COLOR         sf::Color::Blue
+#define BLUE_COLOR        sf::Color::Blue
 
-#define EventKeyPressed   sf::Event::KeyPressed
-#define EventWindowClosed sf::Event::Closed
-#define KeyPressed(Key)   sf::Keyboard::isKeyPressed (Key)
+#define EventKeyPressed    sf::Event::KeyPressed
+#define EventWheelScrolled sf::Event::MouseWheelScrolled
+#define EventWindowClosed  sf::Event::Closed
+#define KeyPressed(Key)    sf::Keyboard::isKeyPressed (Key)
+
 #define KeyLeft           sf::Keyboard::Left
 #define KeyRight          sf::Keyboard::Right
 #define KeyUp             sf::Keyboard::Up
 #define KeyDown           sf::Keyboard::Down
+
 #define KeyEqual          sf::Keyboard::Equal
 #define KeyHyphen         sf::Keyboard::Hyphen
-#define KeyEnter          sf::Keyboard::Enter
+
 #define KeyEscape         sf::Keyboard::Escape
+
+#define KeyQ              sf::Keyboard::Q
+#define KeyW              sf::Keyboard::W
+#define KeyE              sf::Keyboard::E
 
 #define KeyNum1           sf::Keyboard::Num1
 #define KeyNum2           sf::Keyboard::Num2
