@@ -62,10 +62,10 @@ static void event_process (Window *window, int *code_error);
 static inline void frame_process (Window *window, int *code_error);
 static inline void window_update (WindowConfig *window_config, int *code_error);
 static void key_process (Window *window, int *code_error);
-static void mouse_wheel_process (Window *window, sf::Event *event, int *code_error);
+static inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_error);
 static void process_mandelbrot (Window *window, int *code_error);
 static inline int check_point_mandelbrot (const double start_coord_x, const double start_coord_y);
-static void switch_color (Window *window, int *n_frame, int *code_error);
+static inline void switch_color (WindowConfig *window_config, int *n_frame, int *code_error);
 
 #ifdef FPS_ON
         static void set_string_fps (Window *window, int *code_error);
@@ -142,7 +142,7 @@ void draw_window (int *code_error)
 
                 if (window.window_config.auto_switch_color)
                 {
-                        switch_color(&window, &n_frame, code_error);
+                        switch_color(&window.window_config, &n_frame, code_error);
                 }
         }
 }
@@ -238,7 +238,7 @@ void key_process (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
-        #include "..//includes/keys.h"
+        #include "../includes/keys.h"
         {}
 }
 
@@ -269,7 +269,7 @@ inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_err
         }
 }
 
-inline void process_mandelbrot (Window *window, int *code_error)
+void process_mandelbrot (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -330,19 +330,20 @@ void set_color_pixel (WindowConfig *window_config, const long long int belong_ma
 
 }
 
-void switch_color (Window *window, int *n_frame, int *code_error)
+inline void switch_color (WindowConfig *window_config, int *n_frame, int *code_error)
 {
-        my_assert (window  != NULL, ERR_PTR);
-        my_assert (n_frame != NULL, ERR_PTR);
+        my_assert (window_config != NULL, ERR_PTR);
+        my_assert (n_frame       != NULL, ERR_PTR);
+
         (*n_frame)++;
 
         if (*n_frame == 4)
         {
-                window->window_config.n_color += 1;
+                window_config->n_color += 1;
 
-                if (window->window_config.n_color == 9)
+                if (window_config->n_color == 9)
                 {
-                        window->window_config.n_color = 0;
+                        window_config->n_color = 0;
                 }
 
                 *n_frame = 0;

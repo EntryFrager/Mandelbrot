@@ -58,7 +58,7 @@ typedef struct {
     double zoom     = 1;
 } WindowPosition;
 
-struct Window{
+typedef struct {
     bool window_is_create = false;
 
     WindowConfig window_config = {};
@@ -68,7 +68,7 @@ struct Window{
     #endif
 
     WindowPosition window_position = {};
-};
+} Window;
 
 void set_color_pixel (WindowConfig *window_config, const long long int belong_mandelbrot, const int ix, const int iy, int *code_error);
 
