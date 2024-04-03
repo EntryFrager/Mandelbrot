@@ -20,11 +20,6 @@ const int N_MAX = 256;
 
 const int VECTOR_SIZE = 4;
 
-const double COEF_SCALE_X  = 3.0f;
-const double COEF_SCALE_Y  = 2.0f;
-const double COEF_OFFSET_X = 2.0f;
-const double COEF_OFFSET_Y = 1.0f;
-
 #ifdef FPS_ON
     typedef struct {
         float     frame_time   = 0;
@@ -49,6 +44,8 @@ typedef struct {
         sf::Text text_fps;
     #endif
 
+    bool auto_switch_color = false;
+
     bool use_avx   = false;
     bool use_array = false;
 
@@ -62,6 +59,8 @@ typedef struct {
 } WindowPosition;
 
 struct Window{
+    bool window_is_create = false;
+
     WindowConfig window_config = {};
 
     #ifdef FPS_ON

@@ -17,6 +17,7 @@
 #define KeyHyphen         sf::Keyboard::Hyphen
 
 #define KeyEscape         sf::Keyboard::Escape
+#define KeyEnter          sf::Keyboard::Enter
 
 #define KeyQ              sf::Keyboard::Q
 #define KeyW              sf::Keyboard::W

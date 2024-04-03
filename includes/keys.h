@@ -3,34 +3,39 @@ DEF_KEY(KeyEscape,
             window->window_config.window.close();
         })
 
+DEF_KEY(KeyEnter,
+        {
+            window->window_config.auto_switch_color = !window->window_config.auto_switch_color;
+        })
+
 DEF_KEY(KeyLeft,
         {
-            window->window_position.x_offset -= COEF_WINDOW_MOVE;
+            window->window_position.x_offset += COEF_WINDOW_MOVE / window->window_position.zoom;
         })
 
 DEF_KEY(KeyRight,
         {
-            window->window_position.x_offset += COEF_WINDOW_MOVE;
+            window->window_position.x_offset -= COEF_WINDOW_MOVE / window->window_position.zoom;
         })
 
 DEF_KEY(KeyUp,
         {
-            window->window_position.y_offset -= COEF_WINDOW_MOVE;
+            window->window_position.y_offset += COEF_WINDOW_MOVE / window->window_position.zoom;
         })
 
 DEF_KEY(KeyDown,
         {
-            window->window_position.y_offset += COEF_WINDOW_MOVE;
+            window->window_position.y_offset -= COEF_WINDOW_MOVE / window->window_position.zoom;
         })
 
 DEF_KEY(KeyEqual,
         {
-            window->window_position.zoom /= COEF_WINDOW_ZOOM;
+            window->window_position.zoom *= COEF_WINDOW_ZOOM;
         })
 
 DEF_KEY(KeyHyphen,
         {
-            window->window_position.zoom *= COEF_WINDOW_ZOOM;
+            window->window_position.zoom /= COEF_WINDOW_ZOOM;
         })
 
 DEF_KEY(KeyQ,

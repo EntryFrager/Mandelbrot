@@ -8,24 +8,27 @@ static const __m256d VECTOR_MAX_RADIUS = _mm256_set1_pd (MAX_RADIUS);
 static inline void check_point_mandelbrot_avx (const __m256d start_coord_x, const __m256d start_coord_y, volatile __m256i *belong_mandelbrot_avx, int *code_error);
 static inline void set_vector_color (WindowConfig *window_config, const long long int *belong_mandelbrot_avx, const int ix, const int iy, int *code_error);
 
-void process_mandelbrot_avx (struct Window *window, int *code_error)
+void process_mandelbrot_avx (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
-        __m256d VECTOR_START_CARRY_X  = _mm256_set_pd((double) 3 / WIDTH * COEF_SCALE_X * window->window_position.zoom,
-                                                      (double) 2 / WIDTH * COEF_SCALE_X * window->window_position.zoom,
-                                                      (double) 1 / WIDTH * COEF_SCALE_X * window->window_position.zoom,
+        __m256d VECTOR_START_CARRY_X  = _mm256_set_pd((double) 3 / window->window_position.zoom,
+                                                      (double) 2 / window->window_position.zoom,
+                                                      (double) 1 / window->window_position.zoom,
                                                       (double) 0);
+
+        const double scale_x = WIDTH  / (2 * window->window_position.zoom) + window->window_position.x_offset;
+        const double scale_y = HEIGHT / (2 * window->window_position.zoom) + window->window_position.y_offset;
 
         for (int iy = 0; iy < HEIGHT; iy++)
         {
+                __m256d mandel_coord_y = _mm256_set1_pd((double) iy / window->window_position.zoom - scale_y);
+
                 for (int ix = 0; ix < WIDTH; ix += 4)
                 {
-                        __m256d mandel_coord_x = _mm256_set1_pd((((double) ix + window->window_position.x_offset) / WIDTH  * COEF_SCALE_X - COEF_OFFSET_X) * window->window_position.zoom);
+                        __m256d mandel_coord_x = _mm256_set1_pd((double) ix / window->window_position.zoom - scale_x);
 
                         mandel_coord_x = _mm256_add_pd (mandel_coord_x, VECTOR_START_CARRY_X);
-
-                        __m256d mandel_coord_y = _mm256_set1_pd((((double) iy + window->window_position.y_offset) / HEIGHT * COEF_SCALE_Y - COEF_OFFSET_Y) * window->window_position.zoom);
 
                         volatile __m256i belong_mandelbrot_avx = _mm256_set1_epi64x(N_MAX - 1);
 

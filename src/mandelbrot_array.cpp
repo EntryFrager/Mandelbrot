@@ -6,23 +6,26 @@
 static inline void check_point_mandelbrot_array (const double *start_coord_x, const double *start_coord_y, long long int *belong_mandelbrot_array, int *code_error);
 static inline void set_color_pixel_array (WindowConfig *window_config, const long long int *belong_mandelbrot_array, const int ix, const int iy, int *code_error);
 
-void process_mandelbrot_array (struct Window *window, int *code_error)
+void process_mandelbrot_array (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
+        const double scale_x = WIDTH  / (2 * window->window_position.zoom) + window->window_position.x_offset;
+        const double scale_y = HEIGHT / (2 * window->window_position.zoom) + window->window_position.y_offset;
+
         for (int iy = 0; iy < HEIGHT; iy++)
         {
+                double mandel_coord_y[VECTOR_SIZE] = {(double) iy / window->window_position.zoom - scale_y,
+                                                      (double) iy / window->window_position.zoom - scale_y,
+                                                      (double) iy / window->window_position.zoom - scale_y,
+                                                      (double) iy / window->window_position.zoom - scale_y};
+
                 for (int ix = 0; ix < WIDTH; ix += 4)
                 {
-                        double mandel_coord_x[VECTOR_SIZE] = {(((double) ix     + window->window_position.x_offset) / WIDTH  * COEF_SCALE_X - COEF_OFFSET_X) * window->window_position.zoom,
-                                                              (((double) ix + 1 + window->window_position.x_offset) / WIDTH  * COEF_SCALE_X - COEF_OFFSET_X) * window->window_position.zoom,
-                                                              (((double) ix + 2 + window->window_position.x_offset) / WIDTH  * COEF_SCALE_X - COEF_OFFSET_X) * window->window_position.zoom,
-                                                              (((double) ix + 3 + window->window_position.x_offset) / WIDTH  * COEF_SCALE_X - COEF_OFFSET_X) * window->window_position.zoom};
-
-                        double mandel_coord_y[VECTOR_SIZE] = {(((double) iy     + window->window_position.y_offset) / HEIGHT * COEF_SCALE_Y - COEF_OFFSET_Y) * window->window_position.zoom,
-                                                              (((double) iy     + window->window_position.y_offset) / HEIGHT * COEF_SCALE_Y - COEF_OFFSET_Y) * window->window_position.zoom,
-                                                              (((double) iy     + window->window_position.y_offset) / HEIGHT * COEF_SCALE_Y - COEF_OFFSET_Y) * window->window_position.zoom,
-                                                              (((double) iy     + window->window_position.y_offset) / HEIGHT * COEF_SCALE_Y - COEF_OFFSET_Y) * window->window_position.zoom};
+                        double mandel_coord_x[VECTOR_SIZE] = {((double) ix    ) / window->window_position.zoom - scale_x,
+                                                              ((double) ix + 1) / window->window_position.zoom - scale_x,
+                                                              ((double) ix + 2) / window->window_position.zoom - scale_x,
+                                                              ((double) ix + 3) / window->window_position.zoom - scale_x};
 
                         long long int belong_mandelbrot_array[VECTOR_SIZE] = {0};
 

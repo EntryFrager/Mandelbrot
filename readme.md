@@ -33,7 +33,7 @@ $$ y_ n = 2 * x_ {n-1} * y_ {n-1} + y_ 0 $$
 
 Для рисования множества Мандельброта была использована библиотека `SFML`.
 
-![overflow](/picture_for_readme/1.png)
+![overflow](/picture_for_readme/mandelbrot.gif)
 
 ### Интерфейс программы
 

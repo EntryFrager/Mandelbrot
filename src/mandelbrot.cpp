@@ -39,7 +39,7 @@
 
 static const char *HEADING = "Mandelbrot!";
 
-static const int  FONT_SIZE = 24;
+static const int FONT_SIZE = 24;
 
 #ifdef FPS_ON
         static const char *FRAME_STR  = "Frame time / Frame ticks";
@@ -49,7 +49,7 @@ static const int  FONT_SIZE = 24;
 #endif
 
 static const double COEF_WINDOW_ZOOM = 1.1;
-static const int    COEF_WINDOW_MOVE = 10;
+static const double COEF_WINDOW_MOVE = 10;
 
 static const int N_COLORS = 9;
 static const int N_PARAMS = 2;
@@ -58,21 +58,29 @@ static const int COLORS[N_COLORS][N_PARAMS] = {{6, 10}, {20, 60}, {125, 235}, {9
 
 static Window window = {};
 
-static inline void event_process (struct Window *window, int *code_error);
-static inline void frame_process (struct Window *window, int *code_error);
+static void event_process (Window *window, int *code_error);
+static inline void frame_process (Window *window, int *code_error);
 static inline void window_update (WindowConfig *window_config, int *code_error);
-static inline void key_process (struct Window *window, int *code_error);
-static inline void mouse_wheel_process (struct Window *window, sf::Event *event, int *code_error);
-static inline void process_mandelbrot (struct Window *window, int *code_error);
+static void key_process (Window *window, int *code_error);
+static void mouse_wheel_process (Window *window, sf::Event *event, int *code_error);
+static void process_mandelbrot (Window *window, int *code_error);
 static inline int check_point_mandelbrot (const double start_coord_x, const double start_coord_y);
+static void switch_color (Window *window, int *n_frame, int *code_error);
 
 #ifdef FPS_ON
-        static void set_string_fps (struct Window *window, int *code_error);
+        static void set_string_fps (Window *window, int *code_error);
 #endif
 
 void create_window (const char *font_file_name, int *code_error)
 {
         my_assert (font_file_name != NULL, ERR_PTR);
+
+        if (window.window_is_create)
+        {
+                return;
+        }
+
+        window.window_is_create = true;
 
         window.window_config.window.create(sf::VideoMode (WIDTH, HEIGHT), HEADING);
         window.window_config.image.create(WIDTH, HEIGHT);
@@ -80,6 +88,8 @@ void create_window (const char *font_file_name, int *code_error)
         window.window_config.sprite.setTexture(window.window_config.texture);
 
         window.window_config.n_color = 0;
+
+        window.window_config.auto_switch_color = false;
 
         window.window_config.use_avx   = false;
         window.window_config.use_array = false;
@@ -102,19 +112,17 @@ void create_window (const char *font_file_name, int *code_error)
 
         #endif
 
-        window.window_position.x_offset = 0;
+        window.window_position.x_offset = 0.6;
         window.window_position.y_offset = 0;
-        window.window_position.zoom     = 1;
+        window.window_position.zoom     = 300;
 }
 
 void draw_window (int *code_error)
 {
-        int n_color = 0;
+        int n_frame = 0;
 
         while (window.window_config.window.isOpen())
         {
-                n_color++;
-
                 PROCESS_FRAME_PERFORMANCE(
                 {
                         event_process(&window, code_error);
@@ -132,21 +140,14 @@ void draw_window (int *code_error)
                         window_update(&window.window_config, code_error);
                 #endif
 
-                if (n_color == 4)
+                if (window.window_config.auto_switch_color)
                 {
-                        window.window_config.n_color += 1;
-
-                        if (window.window_config.n_color == 9)
-                        {
-                                window.window_config.n_color = 0;
-                        }
-
-                        n_color = 0;
+                        switch_color(&window, &n_frame, code_error);
                 }
         }
 }
 
-inline void event_process (struct Window *window, int *code_error)
+void event_process (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -190,7 +191,7 @@ inline void event_process (struct Window *window, int *code_error)
 
 }
 
-inline void frame_process (struct Window *window, int *code_error)
+inline void frame_process (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -233,7 +234,7 @@ inline void window_update (WindowConfig *window_config, int *code_error)
         }                                                       \
         else
 
-inline void key_process (struct Window *window, int *code_error)
+void key_process (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -243,45 +244,45 @@ inline void key_process (struct Window *window, int *code_error)
 
 #undef DEF_KEY
 
-inline void mouse_wheel_process (struct Window *window, sf::Event *event, int *code_error)
+inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
         my_assert(event  != NULL, ERR_PTR);
 
         if (event->mouseWheelScroll.delta > 0)
         {
-                if (window->window_config.n_color == 8)
+                window->window_config.n_color++;
+
+                if (window->window_config.n_color == N_COLORS)
                 {
                         window->window_config.n_color = 0;
-                }
-                else
-                {
-                        window->window_config.n_color++;
                 }
         }
         else
         {
+                window->window_config.n_color--;
+
                 if (window->window_config.n_color == 0)
                 {
-                        window->window_config.n_color = 8;
-                }
-                else
-                {
-                        window->window_config.n_color--;
+                        window->window_config.n_color = N_COLORS;
                 }
         }
 }
 
-inline void process_mandelbrot (struct Window *window, int *code_error)
+inline void process_mandelbrot (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
+        const double scale_x = WIDTH  / (2 * window->window_position.zoom) + window->window_position.x_offset;
+        const double scale_y = HEIGHT / (2 * window->window_position.zoom) + window->window_position.y_offset;
+
         for (int iy = 0; iy < HEIGHT; iy++)
         {
+                double mandel_coord_y = (double) iy / window->window_position.zoom - scale_y;
+
                 for (int ix = 0; ix < WIDTH; ix++)
                 {
-                        double mandel_coord_x = (((double) ix + window->window_position.x_offset) / WIDTH  * COEF_SCALE_X - COEF_OFFSET_X) * window->window_position.zoom;
-                        double mandel_coord_y = (((double) iy + window->window_position.y_offset) / HEIGHT * COEF_SCALE_Y - COEF_OFFSET_Y) * window->window_position.zoom;
+                        double mandel_coord_x = (double) ix / window->window_position.zoom - scale_x;
 
                         volatile int belong_mandelbrot = check_point_mandelbrot(mandel_coord_x, mandel_coord_y);
                         ERR_RET();
@@ -329,9 +330,28 @@ void set_color_pixel (WindowConfig *window_config, const long long int belong_ma
 
 }
 
+void switch_color (Window *window, int *n_frame, int *code_error)
+{
+        my_assert (window  != NULL, ERR_PTR);
+        my_assert (n_frame != NULL, ERR_PTR);
+        (*n_frame)++;
+
+        if (*n_frame == 4)
+        {
+                window->window_config.n_color += 1;
+
+                if (window->window_config.n_color == 9)
+                {
+                        window->window_config.n_color = 0;
+                }
+
+                *n_frame = 0;
+        }
+}
+
 #ifdef FPS_ON
 
-void set_string_fps (struct Window *window, int *code_error)
+void set_string_fps (Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
