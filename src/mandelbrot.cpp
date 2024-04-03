@@ -1,79 +1,152 @@
-#include "..//includes/mandelbrot.hpp"
-#include "..//includes/mandelbrot_array.hpp"
-#include "..//includes/mandelbrot_avx.hpp"
+#ifndef MANDELBROT_CPP
+#define MANDELBROT_CPP
 
-static const int COLORS[9][2] = {{6, 10}, {20, 60}, {125, 235}, {97, 126}, {12, 60}, {234, 12}, {120, 90}, {20, 10}, {60, 30}};
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 
-static inline void event_process (Window *window, int *code_error);
-static inline void frame_process (Window *window, int *code_error);
+#include "../includes/mandelbrot.hpp"
+#include "../includes/mandelbrot_avx.hpp"
+#include "../includes/mandelbrot_array.hpp"
+
+#ifdef FPS_ON
+        #define PROCESS_FRAME_PERFORMANCE(code)                                 \
+                START_PROCESS_PERFORMANCE(window.window_perf.frame_time,        \
+                                        window.window_perf.frame_ticks);        \
+                code;                                                           \
+                END_PROCESS_PERFORMANCE(window.window_perf.frame_time,          \
+                                        window.window_perf.frame_ticks);        \
+
+        #define PROCESS_RENDER_PERFORMANCE(code)                                \
+                START_PROCESS_PERFORMANCE(window.window_perf.render_time,       \
+                                        window.window_perf.render_ticks);       \
+                code;                                                           \
+                END_PROCESS_PERFORMANCE(window.window_perf.render_time,         \
+                                        window.window_perf.render_ticks);       \
+
+        #define START_PROCESS_PERFORMANCE(time, ticks)                          \
+                time = window.window_perf.clock.getElapsedTime().asSeconds();   \
+                ticks = __rdtsc();
+
+        #define END_PROCESS_PERFORMANCE(time, ticks)                                    \
+                time = window.window_perf.clock.getElapsedTime().asSeconds() - time;    \
+                time = 1 / (time);                                                      \
+                ticks = __rdtsc() - ticks;
+
+#else
+        #define PROCESS_FRAME_PERFORMANCE(code)  code
+        #define PROCESS_RENDER_PERFORMANCE(code) code
+#endif
+
+static const char *HEADING = "Mandelbrot!";
+
+static const int  FONT_SIZE = 24;
+
+#ifdef FPS_ON
+        static const char *FRAME_STR  = "Frame time / Frame ticks";
+        static const char *RENDER_STR = "Render time / Render ticks";
+
+        static const int LEN_STR_FPS = 100;
+#endif
+
+static const double COEF_WINDOW_ZOOM = 1.1;
+static const int    COEF_WINDOW_MOVE = 10;
+
+static const int N_COLORS = 9;
+static const int N_PARAMS = 2;
+
+static const int COLORS[N_COLORS][N_PARAMS] = {{6, 10}, {20, 60}, {125, 235}, {97, 126}, {12, 60}, {234, 12}, {120, 90}, {20, 10}, {60, 30}};
+
+static Window window = {};
+
+static inline void event_process (struct Window *window, int *code_error);
+static inline void frame_process (struct Window *window, int *code_error);
 static inline void window_update (WindowConfig *window_config, int *code_error);
-static inline void key_process (Window *window, int *code_error);
-static inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_error);
-static inline void process_mandelbrot (Window *window, int *code_error);
+static inline void key_process (struct Window *window, int *code_error);
+static inline void mouse_wheel_process (struct Window *window, sf::Event *event, int *code_error);
+static inline void process_mandelbrot (struct Window *window, int *code_error);
 static inline int check_point_mandelbrot (const double start_coord_x, const double start_coord_y);
 
 #ifdef FPS_ON
-    static void set_string_fps (Window *window, int *code_error);
+        static void set_string_fps (struct Window *window, int *code_error);
 #endif
 
-void create_window (Window *window, const char *font_file_name, int *code_error)
+void create_window (const char *font_file_name, int *code_error)
 {
-        my_assert(window != NULL, ERR_PTR);
+        my_assert (font_file_name != NULL, ERR_PTR);
 
-        window->window_config.window.create(sf::VideoMode (WIDTH, HEIGHT), HEADING);
-        window->window_config.image.create(WIDTH, HEIGHT);
-        window->window_config.texture.create(WIDTH, HEIGHT);
-        window->window_config.sprite.setTexture(window->window_config.texture);
+        window.window_config.window.create(sf::VideoMode (WIDTH, HEIGHT), HEADING);
+        window.window_config.image.create(WIDTH, HEIGHT);
+        window.window_config.texture.create(WIDTH, HEIGHT);
+        window.window_config.sprite.setTexture(window.window_config.texture);
 
-        window->window_config.n_color = 0;
+        window.window_config.n_color = 0;
 
-        window->window_config.use_avx   = false;
-        window->window_config.use_array = false;
+        window.window_config.use_avx   = false;
+        window.window_config.use_array = false;
 
         #ifdef FPS_ON
-                if (!window->window_config.font_fps.loadFromFile(font_file_name))
+                if (!window.window_config.font_fps.loadFromFile(font_file_name))
                 {
                         *code_error |= ERR_FOPEN;
                 }
 
-                window->window_config.text_fps.setFont(window->window_config.font_fps);
-                window->window_config.text_fps.setCharacterSize(FONT_SIZE);
+                window.window_config.text_fps.setFont(window.window_config.font_fps);
+                window.window_config.text_fps.setCharacterSize(FONT_SIZE);
 
-                window->window_config.text_fps.setFillColor(BLUE_COLOR);
+                window.window_config.text_fps.setFillColor(BLUE_COLOR);
 
-                window->window_performance.frame_ticks  = 0;
-                window->window_performance.frame_time   = 0;
-                window->window_performance.render_ticks = 0;
-                window->window_performance.render_time  = 0;
+                window.window_perf.frame_ticks  = 0;
+                window.window_perf.frame_time   = 0;
+                window.window_perf.render_ticks = 0;
+                window.window_perf.render_time  = 0;
 
         #endif
 
-        window->window_position.x_offset = 0;
-        window->window_position.y_offset = 0;
-        window->window_position.zoom     = 1;
+        window.window_position.x_offset = 0;
+        window.window_position.y_offset = 0;
+        window.window_position.zoom     = 1;
 }
 
-void draw_window (Window *window, int *code_error)
+void draw_window (int *code_error)
 {
-        my_assert(window != NULL, ERR_PTR);
+        int n_color = 0;
 
-        while (window->window_config.window.isOpen())
+        while (window.window_config.window.isOpen())
         {
+                n_color++;
+
                 PROCESS_FRAME_PERFORMANCE(
                 {
-                        event_process(window, code_error);
+                        event_process(&window, code_error);
                         ERR_RET();
 
-                        PROCESS_RENDER_PERFORMANCE(frame_process(window, code_error));
+                        PROCESS_RENDER_PERFORMANCE(frame_process(&window, code_error));
                         ERR_RET();
 
-                        window_update(&window->window_config, code_error);
+                        window_update(&window.window_config, code_error);
                         ERR_RET();
                 })
+
+                #ifdef FPS_ON
+                        set_string_fps(&window, code_error);
+                        window_update(&window.window_config, code_error);
+                #endif
+
+                if (n_color == 4)
+                {
+                        window.window_config.n_color += 1;
+
+                        if (window.window_config.n_color == 9)
+                        {
+                                window.window_config.n_color = 0;
+                        }
+
+                        n_color = 0;
+                }
         }
 }
 
-inline void event_process (Window *window, int *code_error)
+inline void event_process (struct Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -117,7 +190,7 @@ inline void event_process (Window *window, int *code_error)
 
 }
 
-inline void frame_process (Window *window, int *code_error)
+inline void frame_process (struct Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -160,7 +233,7 @@ inline void window_update (WindowConfig *window_config, int *code_error)
         }                                                       \
         else
 
-inline void key_process (Window *window, int *code_error)
+inline void key_process (struct Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -170,7 +243,7 @@ inline void key_process (Window *window, int *code_error)
 
 #undef DEF_KEY
 
-inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_error)
+inline void mouse_wheel_process (struct Window *window, sf::Event *event, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
         my_assert(event  != NULL, ERR_PTR);
@@ -199,7 +272,7 @@ inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_err
         }
 }
 
-inline void process_mandelbrot (Window *window, int *code_error)
+inline void process_mandelbrot (struct Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -246,24 +319,33 @@ void set_color_pixel (WindowConfig *window_config, const long long int belong_ma
 {
         my_assert(window_config != NULL, ERR_PTR);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+
         sf::Color color((belong_mandelbrot * COLORS[window_config->n_color][0]) % N_MAX, 0, (belong_mandelbrot * COLORS[window_config->n_color][1]) % N_MAX);
         window_config->image.setPixel(ix, iy, color);
+
+#pragma GCC diagnostic pop
+
 }
 
 #ifdef FPS_ON
 
-void set_string_fps (Window *window, int *code_error)
+void set_string_fps (struct Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
         char *str_fps = (char *) calloc(LEN_STR_FPS, sizeof(char));
 
-        sprintf(str_fps, "%s / %s : %.2f / %ld\n\r%s / %s : %.2f / %ld\n\r",
-                FRAME_TIME_STR, FRAME_TICKS_STR, window->window_performance.frame_time,
-                window->window_performance.frame_ticks, RENDER_TIME_STR,
-                RENDER_TICKS_STR, window->window_performance.render_time, window->window_performance.render_ticks);
+        sprintf(str_fps, "%s : %.2f / %ld\n\r%s : %.2f / %ld\n\r",
+                FRAME_STR, window->window_perf.frame_time, window->window_perf.frame_ticks,
+                RENDER_STR, window->window_perf.render_time, window->window_perf.render_ticks);
 
         window->window_config.text_fps.setString(str_fps);
 }
 
 #endif
+
+#pragma GCC diagnostic pop
+
+#endif //MANDELBROT_CPP

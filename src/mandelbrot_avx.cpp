@@ -1,11 +1,14 @@
-#include "..//includes/mandelbrot_avx.hpp"
+#ifndef MANDELBROT_AVX_CPP
+#define MANDELBROT_AVX_CPP
+
+#include "../includes/mandelbrot_avx.hpp"
 
 static const __m256d VECTOR_MAX_RADIUS = _mm256_set1_pd (MAX_RADIUS);
 
 static inline void check_point_mandelbrot_avx (const __m256d start_coord_x, const __m256d start_coord_y, volatile __m256i *belong_mandelbrot_avx, int *code_error);
 static inline void set_vector_color (WindowConfig *window_config, const long long int *belong_mandelbrot_avx, const int ix, const int iy, int *code_error);
 
-void process_mandelbrot_avx (Window *window, int *code_error)
+void process_mandelbrot_avx (struct Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -29,7 +32,12 @@ void process_mandelbrot_avx (Window *window, int *code_error)
                         check_point_mandelbrot_avx(mandel_coord_x, mandel_coord_y, &belong_mandelbrot_avx, code_error);
                         ERR_RET();
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+
                         set_vector_color(&window->window_config, (long long int *) &belong_mandelbrot_avx, ix, iy, code_error);
+
+#pragma GCC diagnostic pop
                 }
         }
 }
@@ -81,3 +89,5 @@ inline void set_vector_color (WindowConfig *window_config, const long long int *
                 set_color_pixel(window_config, belong_mandelbrot_avx[i], ix + i, iy, code_error);
         }
 }
+
+#endif //MANDELBROT_AVX_CPP

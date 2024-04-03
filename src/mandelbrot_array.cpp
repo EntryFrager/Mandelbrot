@@ -1,9 +1,12 @@
-#include "..//includes/mandelbrot_array.hpp"
+#ifndef MANDELBROT_ARRAY_CPP
+#define MANDELBROT_ARRAY_CPP
+
+#include "../includes/mandelbrot_array.hpp"
 
 static inline void check_point_mandelbrot_array (const double *start_coord_x, const double *start_coord_y, long long int *belong_mandelbrot_array, int *code_error);
 static inline void set_color_pixel_array (WindowConfig *window_config, const long long int *belong_mandelbrot_array, const int ix, const int iy, int *code_error);
 
-void process_mandelbrot_array (Window *window, int *code_error)
+void process_mandelbrot_array (struct Window *window, int *code_error)
 {
         my_assert(window != NULL, ERR_PTR);
 
@@ -79,3 +82,5 @@ inline void set_color_pixel_array (WindowConfig *window_config, const long long 
         set_color_pixel(window_config, belong_mandelbrot_array[i], ix + i, iy, code_error);
     }
 }
+
+#endif //MANDELBROT_ARRAY_CPP

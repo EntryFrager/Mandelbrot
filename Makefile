@@ -9,7 +9,7 @@ CFLAGS = -c -O3 -mavx -mavx2 -Wshadow -Winit-self -Wredundant-decls -Wcast-align
 
 LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
-INCLUDES = includes/mandelbrot.hpp includes/mandelbrot_avx.hpp includes/mandelbrot_array.hpp includes/keys.h includes/error.h includes/error_name.h includes/dsl.hpp
+INCLUDES = includes/mandelbrot_user.hpp includes/mandelbrot.hpp includes/mandelbrot_avx.hpp includes/mandelbrot_array.hpp includes/keys.h includes/error.h includes/error_name.h includes/dsl.hpp
 
 SOURCES = main.cpp mandelbrot.cpp mandelbrot_avx.cpp mandelbrot_array.cpp error.cpp
 
