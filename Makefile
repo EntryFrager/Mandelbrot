@@ -9,13 +9,13 @@ CFLAGS = -c -O3 -mavx -mavx2 -Wshadow -Winit-self -Wredundant-decls -Wcast-align
 
 LIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
-INCLUDES = includes/mandelbrot_user.hpp includes/mandelbrot.hpp includes/mandelbrot_avx.hpp includes/mandelbrot_array.hpp includes/keys.h includes/error.h includes/error_name.h includes/dsl.hpp
+INCLUDES = include/user.hpp include/render_frame.hpp include/mandelbrot.hpp include/mandelbrot_avx.hpp include/mandelbrot_array.hpp include/keys.h include/error.h include/error_name.h include/dsl.hpp
 
-SOURCES = main.cpp mandelbrot.cpp mandelbrot_avx.cpp mandelbrot_array.cpp error.cpp
+SOURCES = main.cpp render_frame.cpp mandelbrot.cpp mandelbrot_avx.cpp mandelbrot_array.cpp error.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
-EXECUTABLE = mandelbrot
+EXECUTABLE = mandelbrot.exe
 
 VPATH = ./src/
 

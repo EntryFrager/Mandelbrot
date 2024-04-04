@@ -1,13 +1,12 @@
-#ifndef MANDELBROT_HPP
-#define MANDELBROT_HPP
+#ifndef RENDER_FRAME_HPP
+#define RENDER_FRAME_HPP
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <SFML/Graphics.hpp>
-#include <immintrin.h>
 
-#include "../includes/mandelbrot_user.hpp"
-#include "../includes/dsl.hpp"
+#include "user.hpp"
+#include "dsl.hpp"
 
 #define FPS_ON
 
@@ -72,4 +71,4 @@ typedef struct {
 
 void set_color_pixel (WindowConfig *window_config, const long long int belong_mandelbrot, const int ix, const int iy, int *code_error);
 
-#endif //MANDELBROT_HPP
+#endif // RENDER_FRAME_HPP

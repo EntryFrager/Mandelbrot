@@ -1,6 +1,6 @@
-#include "../includes/mandelbrot_user.hpp"
+#include "../include/user.hpp"
 
-const char FONT_FILE_NAME[] = "./includes/arialmt.ttf";
+const char *FONT_FILE_NAME = "./include/arialmt.ttf";
 
 int main ()
 {
