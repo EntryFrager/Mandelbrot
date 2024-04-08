@@ -3,7 +3,7 @@
 
 #include "error.h"
 
-void create_window (const char *font_file_name, int *code_error);
+void create_window (const char *font_file_name, int font_size, int *code_error);
 
 void draw_window (int *code_error);
 

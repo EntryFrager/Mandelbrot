@@ -41,8 +41,6 @@
 
 static const char *HEADING = "Mandelbrot!";
 
-static const int FONT_SIZE = 24;
-
 #ifdef FPS_ON
         static const char *FRAME_STR  = "Frame time / Frame ticks";
         static const char *RENDER_STR = "Render time / Render ticks";
@@ -54,9 +52,8 @@ static const double COEF_WINDOW_ZOOM = 1.1;
 static const double COEF_WINDOW_MOVE = 10;
 
 static const int N_COLORS = 9;
-static const int N_PARAMS = 2;
 
-static const int COLORS[N_COLORS][N_PARAMS] = {{6, 10}, {20, 60}, {125, 235}, {97, 126}, {12, 60}, {234, 12}, {120, 90}, {20, 10}, {60, 30}};
+static const COLOR COLORS[N_COLORS] = {{6, 0, 10}, {20, 0, 60}, {125, 0, 235}, {97, 0, 126}, {12, 0, 60}, {234, 0, 12}, {120, 0, 90}, {20, 0, 10}, {60, 0, 30}};
 
 static Window window = {};
 
@@ -71,7 +68,7 @@ static inline void switch_color (WindowConfig *window_config, int *code_error);
         static void set_string_fps (Window *window, int *code_error);
 #endif
 
-void create_window (const char *font_file_name, int *code_error)
+void create_window (const char *font_file_name, int font_size, int *code_error)
 {
         my_assert (font_file_name != NULL, ERR_PTR);
 
@@ -101,7 +98,7 @@ void create_window (const char *font_file_name, int *code_error)
                 }
 
                 window.window_config.text_fps.setFont(window.window_config.font_fps);
-                window.window_config.text_fps.setCharacterSize(FONT_SIZE);
+                window.window_config.text_fps.setCharacterSize(font_size);
 
                 window.window_config.text_fps.setFillColor(BLUE_COLOR);
 
@@ -260,9 +257,9 @@ inline void mouse_wheel_process (Window *window, sf::Event *event, int *code_err
         {
                 window->window_config.n_color--;
 
-                if (window->window_config.n_color == 0)
+                if (window->window_config.n_color == -1)
                 {
-                        window->window_config.n_color = N_COLORS;
+                        window->window_config.n_color = N_COLORS - 1;
                 }
         }
 }
@@ -271,7 +268,9 @@ void set_color_pixel (WindowConfig *window_config, const long long int belong_ma
 {
         my_assert(window_config != NULL, ERR_PTR);
 
-        sf::Color color(((unsigned char) (belong_mandelbrot * COLORS[window_config->n_color][0]) % N_MAX), 0, (unsigned char) ((belong_mandelbrot * COLORS[window_config->n_color][1]) % N_MAX));
+        sf::Color color(((unsigned char) (belong_mandelbrot * COLORS[window_config->n_color].color_r) % N_MAX),
+                         (unsigned char) COLORS[window_config->n_color].color_g,
+                         (unsigned char) ((belong_mandelbrot * COLORS[window_config->n_color].color_b) % N_MAX));
         window_config->image.setPixel(ix, iy, color);
 }
 
@@ -283,7 +282,7 @@ inline void switch_color (WindowConfig *window_config, int *code_error)
 
         n_frame++;
 
-        if (n_frame == 4)
+        if (n_frame == 5)
         {
                 window_config->n_color += 1;
 

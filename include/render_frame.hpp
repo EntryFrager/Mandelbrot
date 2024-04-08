@@ -32,6 +32,12 @@ const int VECTOR_SIZE = 4;
 #endif
 
 typedef struct {
+    int color_r = 0;
+    int color_g = 0;
+    int color_b = 0;
+} COLOR;
+
+typedef struct {
     sf::RenderWindow window;
 
     sf::Image   image;
