@@ -154,7 +154,7 @@ $$ FPS = \frac {2.6 \cdot 10 ^ 9} {ticks} $$
 
 ![overflow](/picture_for_readme/godbolt.png)
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > Более подробно с ассемблерным листингом можно ознакомиться [здесь](https://godbolt.org/z/e11Grsb7M).
 
